@@ -54,7 +54,7 @@ enum g_eMenuModelData //data to be used for displayed models in the menu
 
 static stock 
 			g_ePlayerMenuData[MAX_PLAYERS][g_ePlayerMenuEnum],
-			Func:g_sRequestModelSelection[MAX_PLAYERS]<ii>;
+			Func:g_sRequestModelSelection[MAX_PLAYERS]<iii>;
 
 const YSI_INLINE_EXTRA_ID = 0x5949; // "YI" in ascii hex (THANKS GRABER)
 
@@ -88,7 +88,7 @@ stock ShowModelSelectionMenu(playerid, const header[], extraid, List:items)
 	return 1;
 }
 
-stock ShowModelSelectionMenuInline(playerid, Func:cb<ii>, const header[], List:items) // Y_inline code here
+stock ShowModelSelectionMenuInline(playerid, Func:cb<iii>, const header[], List:items) // Y_inline code here
 {
 	new ret = ShowModelSelectionMenu(playerid, header, YSI_INLINE_EXTRA_ID, items);
 
@@ -394,9 +394,9 @@ public OnPlayerDisconnect(playerid, reason)
 		g_ePlayerMenuData[playerid][g_eMenuTextDisplay][i] = PlayerText:INVALID_TEXT_DRAW;
 	}
 
-	if (g_sRequestModelSelection[playerid] != Func:0<ii>) {
+	if (g_sRequestModelSelection[playerid] != Func:0<iii>) {
 		Indirect_Release(g_sRequestModelSelection[playerid]);
-		g_sRequestModelSelection[playerid] = Func:0<ii>;
+		g_sRequestModelSelection[playerid] = Func:0<iii>;
 	}
 
 	#if defined MS_OnPlayerDisconnect
@@ -411,7 +411,7 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid) // Y_Inline change
 	new 
 		Func:callback<ii> = g_sRequestModelSelection[playerid];
 
-	g_sRequestModelSelection[playerid] = Func:0<ii>;
+	g_sRequestModelSelection[playerid] = Func:0<iii>;
 
 	if(g_ePlayerMenuData[playerid][g_eMenuShown] && (clickedid == Text:INVALID_TEXT_DRAW || clickedid == g_eMenuCloseButton))
 	{
@@ -464,7 +464,7 @@ public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid) // Y_Inlin
 	new 
 		Func:callback<ii> = g_sRequestModelSelection[playerid];
 
-	g_sRequestModelSelection[playerid] = Func:0<ii>;
+	g_sRequestModelSelection[playerid] = Func:0<iii>;
 	
 	if(g_ePlayerMenuData[playerid][g_eMenuShown] && (GetTickCount() - g_ePlayerMenuData[playerid][g_eMenuTime]) > 600)
 	{
