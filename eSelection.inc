@@ -90,7 +90,7 @@ stock ShowModelSelectionMenu(playerid, const header[], extraid, List:items)
 
 stock ShowModelSelectionMenuInline(playerid, Func:cb<ii>, const header[], List:items) // Y_inline code here
 {
-	new ret = ShowModelSelectionMenu(playerid, header, PAWN_PLUS_EXTRA_ID, items);
+	new ret = ShowModelSelectionMenu(playerid, header, YSI_INLINE_EXTRA_ID, items);
 
 	if (ret)
 	{
@@ -477,7 +477,7 @@ public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid) // Y_Inlin
 				extraid = g_ePlayerMenuData[playerid][g_eMenuExtra];
 				modelid = list_get(g_ePlayerMenuData[playerid][g_eMenuModels], index);
 
-				if(extraid != PAWN_PLUS_EXTRA_ID)
+				if(extraid != YSI_INLINE_EXTRA_ID)
 				{
 					CallLocalFunction("OnModelSelectionResponse", "iiiii", playerid, extraid, index, modelid, MODEL_RESPONSE_SELECT);
 					HideModelSelectionMenu(playerid);
