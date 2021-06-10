@@ -5,6 +5,8 @@
 
 #include <a_samp>
 #include <PawnPlus>
+#include <YSI_Data/y_iterate>
+#include <YSI_Coding/y_inline>
 
 #if !defined MAX_ITEM_PER_PAGE
 	#define MAX_ITEM_PER_PAGE (18)
@@ -39,7 +41,7 @@ enum g_ePlayerMenuEnum
 	g_eMenuTime
 };
 
-enum _:g_eMenuModelData //data to be used for displayed models in the menu
+enum g_eMenuModelData //data to be used for displayed models in the menu
 {
 	g_eMenuModel,
 	g_eMenuModelText[MAX_MODEL_TEXT],
@@ -50,17 +52,11 @@ enum _:g_eMenuModelData //data to be used for displayed models in the menu
 	Float:g_eItemZoom
 };
 
-static stock g_ePlayerMenuData[MAX_PLAYERS][g_ePlayerMenuEnum];
+static stock 
+			g_ePlayerMenuData[MAX_PLAYERS][g_ePlayerMenuEnum],
+			Func:g_sRequestModelSelection[MAX_PLAYERS]<ii>;
 
-//pawnplus task data
-enum _:E_MODEL_SELECTION_INFO
-{
-	E_MODEL_SELECTION_RESPONSE,
-	E_MODEL_SELECTION_INDEX,
-	E_MODEL_SELECTION_MODELID
-}
-const PAWN_PLUS_EXTRA_ID = 0x502B; // "P+" in ascii hex (THANKS GRABER)
-static Task:ModelSelectionTask[MAX_PLAYERS];
+const YSI_INLINE_EXTRA_ID = 0x5949; // "YI" in ascii hex (THANKS GRABER)
 
 //functions
 stock AddModelMenuItem(List:menulist, modelid, const text[] = "", bool:usingrotation = false, Float:rotx = 0.0, Float:roty = 0.0, Float:rotz = 0.0, Float:zoom = 1.0)
@@ -92,13 +88,17 @@ stock ShowModelSelectionMenu(playerid, const header[], extraid, List:items)
 	return 1;
 }
 
-stock Task:ShowAsyncModelSelectionMenu(playerid, const header[], List:items)
+stock ShowModelSelectionMenuInline(playerid, Func:cb<ii>, const header[], List:items) // Y_inline code here
 {
-	if(task_valid(ModelSelectionTask[playerid])) task_delete(ModelSelectionTask[playerid]);
-	ModelSelectionTask[playerid] = task_new();
+	new ret = ShowModelSelectionMenu(playerid, header, PAWN_PLUS_EXTRA_ID, items);
 
-	ShowModelSelectionMenu(playerid, header, PAWN_PLUS_EXTRA_ID, items);
-	return ModelSelectionTask[playerid];
+	if (ret)
+	{
+		Indirect_Claim(cb);
+		g_sRequestModelSelection[playerid] = cb;
+	}
+
+	return ret;
 }
 
 static stock ShowModelSelectionMenuTextDraws(playerid, const header[])
@@ -394,6 +394,11 @@ public OnPlayerDisconnect(playerid, reason)
 		g_ePlayerMenuData[playerid][g_eMenuTextDisplay][i] = PlayerText:INVALID_TEXT_DRAW;
 	}
 
+	if (g_sRequestModelSelection[playerid] != Func:0<ii>) {
+		Indirect_Release(g_sRequestModelSelection[playerid]);
+		g_sRequestModelSelection[playerid] = Func:0<ii>;
+	}
+
 	#if defined MS_OnPlayerDisconnect
 		return MS_OnPlayerDisconnect(playerid, reason);
 	#else
@@ -401,27 +406,26 @@ public OnPlayerDisconnect(playerid, reason)
 	#endif
 }
 
-public OnPlayerClickTextDraw(playerid, Text:clickedid)
+public OnPlayerClickTextDraw(playerid, Text:clickedid) // Y_Inline change
 {
+	new 
+		Func:callback<ii> = g_sRequestModelSelection[playerid];
+
+	g_sRequestModelSelection[playerid] = Func:0<ii>;
+
 	if(g_ePlayerMenuData[playerid][g_eMenuShown] && (clickedid == Text:INVALID_TEXT_DRAW || clickedid == g_eMenuCloseButton))
 	{
-		if(g_ePlayerMenuData[playerid][g_eMenuExtra] != PAWN_PLUS_EXTRA_ID)
+		if(g_ePlayerMenuData[playerid][g_eMenuExtra] != YSI_INLINE_EXTRA_ID)
 		{
 			CallLocalFunction("OnModelSelectionResponse", "iiiii", playerid, g_ePlayerMenuData[playerid][g_eMenuExtra], 0, 0, MODEL_RESPONSE_CANCEL);
 			HideModelSelectionMenu(playerid);
 		}
 		else
 		{
-			new model_response[E_MODEL_SELECTION_INFO];
-			model_response[E_MODEL_SELECTION_INDEX] = 0;
-			model_response[E_MODEL_SELECTION_MODELID] = 0;
-			model_response[E_MODEL_SELECTION_RESPONSE] = MODEL_RESPONSE_CANCEL;
+			@.callback(0, 0, MODEL_RESPONSE_CANCEL);
+			Indirect_Release(callback);
 
 			HideModelSelectionMenu(playerid);
-
-			new const Task:task = ModelSelectionTask[playerid];
-			ModelSelectionTask[playerid] = Task:0;
-			task_set_result_arr(task, model_response);
 		}
 	}
 	else if(clickedid == g_eMenuRightArrow)
@@ -429,14 +433,23 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 		if(g_ePlayerMenuData[playerid][g_eMenuPage] == g_ePlayerMenuData[playerid][g_eMenuPages]) return false;
 
 		Menu_SetPage(playerid, g_ePlayerMenuData[playerid][g_eMenuPage] + 1);
+		Indirect_Release(callback);
 		return true;
 	}
 	else if(clickedid == g_eMenuLeftArrow)
 	{
-		if(g_ePlayerMenuData[playerid][g_eMenuPage] < 2) return false;
+		if(g_ePlayerMenuData[playerid][g_eMenuPage] < 2) 
+		{
+			Indirect_Release(callback);
+			return false;
+		} 
 
-		else Menu_SetPage(playerid, g_ePlayerMenuData[playerid][g_eMenuPage] - 1);
-		return true;
+		else 
+		{
+			Menu_SetPage(playerid, g_ePlayerMenuData[playerid][g_eMenuPage] - 1);
+			Indirect_Release(callback);
+			return true;
+		}
 	}
 
 	#if defined MS_OnPlayerClickTextDraw
@@ -446,8 +459,13 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 	#endif
 }
 
-public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
+public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid) // Y_Inline callback
 {
+	new 
+		Func:callback<ii> = g_sRequestModelSelection[playerid];
+
+	g_sRequestModelSelection[playerid] = Func:0<ii>;
+	
 	if(g_ePlayerMenuData[playerid][g_eMenuShown] && (GetTickCount() - g_ePlayerMenuData[playerid][g_eMenuTime]) > 600)
 	{
 		for(new i = 0; i < MAX_ITEM_PER_PAGE; i ++)
@@ -465,20 +483,18 @@ public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
 					HideModelSelectionMenu(playerid);
 				}
 				else
-				{
-					new model_response[E_MODEL_SELECTION_INFO];
-					model_response[E_MODEL_SELECTION_INDEX] = index;
-					model_response[E_MODEL_SELECTION_MODELID] = modelid;
-					model_response[E_MODEL_SELECTION_RESPONSE] = MODEL_RESPONSE_SELECT;
+				{	
+					@.callback(index, modelid, MODEL_RESPONSE_SELECT);
+					Indirect_Release(callback);
 
 					HideModelSelectionMenu(playerid);
-
-					new const Task:task = ModelSelectionTask[playerid];
-					ModelSelectionTask[playerid] = Task:0;
-					task_set_result_arr(task, model_response);
 				}
 			}
 		}
+	} 
+	else
+	{
+		Indirect_Release(callback);
 	}
 
 	#if defined MS_OnPlayerClickPlayerTextDraw
