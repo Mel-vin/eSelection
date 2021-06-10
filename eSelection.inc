@@ -422,10 +422,10 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid) // Y_Inline change
 		}
 		else
 		{
+			HideModelSelectionMenu(playerid);
+
 			@.callback(0, 0, MODEL_RESPONSE_CANCEL);
 			Indirect_Release(callback);
-
-			HideModelSelectionMenu(playerid);
 		}
 	}
 	else if(clickedid == g_eMenuRightArrow)
@@ -484,10 +484,10 @@ public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid) // Y_Inlin
 				}
 				else
 				{	
+					HideModelSelectionMenu(playerid);
+
 					@.callback(index, modelid, MODEL_RESPONSE_SELECT);
 					Indirect_Release(callback);
-
-					HideModelSelectionMenu(playerid);
 				}
 			}
 		}
