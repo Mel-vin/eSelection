@@ -409,7 +409,7 @@ public OnPlayerDisconnect(playerid, reason)
 public OnPlayerClickTextDraw(playerid, Text:clickedid) // Y_Inline change
 {
 	new 
-		Func:callback<ii> = g_sRequestModelSelection[playerid];
+		Func:callback<iii> = g_sRequestModelSelection[playerid];
 
 	g_sRequestModelSelection[playerid] = Func:0<iii>;
 
@@ -462,7 +462,7 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid) // Y_Inline change
 public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid) // Y_Inline callback
 {
 	new 
-		Func:callback<ii> = g_sRequestModelSelection[playerid];
+		Func:callback<iii> = g_sRequestModelSelection[playerid];
 
 	g_sRequestModelSelection[playerid] = Func:0<iii>;
 	
